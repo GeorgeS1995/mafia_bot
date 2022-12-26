@@ -23,7 +23,7 @@ func main() {
 	}
 	dg, err := discord.NewMafiaDiscordBot(config.Discord.Token)
 	if err != nil {
-		log.Fatal("Error creating Discord session,", err)
+		log.Fatal("Error creating Discord session, ", err)
 		return
 	}
 	err = dg.Init()
