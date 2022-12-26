@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  mafia-bot:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+    restart: always
+    env_file:
+      - ../mafia-bot.env
+    depends_on:
+      - mafia-db
+  mafia-db:
+    image: postgres:15.1-bullseye
+    restart: always
+    env_file:
+      - ../mafia-db.env
+    volumes:
+      - mafia-db-data:/var/lib/postgresql/data
+
+volumes:
+  mafia-db-data:

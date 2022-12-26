@@ -1,0 +1,4 @@
+version: "3.9"
+services:
+  mafia-bot:
+    command: go run cmd/mafia_bot/mafia_bot.go
