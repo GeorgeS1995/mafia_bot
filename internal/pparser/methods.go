@@ -30,14 +30,16 @@ func (p *PolemicaApiClient) Login(username string, password string) error {
 
 	b, err := json.Marshal(&PolemicaLoginBody{Username: username, Password: password})
 	if err != nil {
-		// TODO raise own error?
-		return err
+		return &MafiaBotPolemicaParserLoginUnmarshalError{
+			Detail: err.Error(),
+		}
 	}
 
 	_, err = p.Requester.Request("POST", loginPath, bytes.NewBuffer(b), nil)
 	if err != nil {
-		// TODO raise own error?
-		return err
+		return &MafiaBotPolemicaParserLoginResponselError{
+			Detail: err.Error(),
+		}
 	}
 
 	return nil

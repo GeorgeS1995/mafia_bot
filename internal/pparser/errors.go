@@ -88,3 +88,21 @@ type MafiaBotPolemicaParserParseGamesHistoryUnmarshalError struct {
 func (e *MafiaBotPolemicaParserParseGamesHistoryUnmarshalError) Error() string {
 	return fmt.Sprintf("%v: Can't unmarshal game history info, detail: %s", e.GetISOFormat(), e.Detail)
 }
+
+type MafiaBotPolemicaParserLoginUnmarshalError struct {
+	MafiaBotPolemicaParserError
+	Detail string
+}
+
+func (e *MafiaBotPolemicaParserLoginUnmarshalError) Error() string {
+	return fmt.Sprintf("%v: Can't marshal login request info, detail: %s", e.GetISOFormat(), e.Detail)
+}
+
+type MafiaBotPolemicaParserLoginResponselError struct {
+	MafiaBotPolemicaParserError
+	Detail string
+}
+
+func (e *MafiaBotPolemicaParserLoginResponselError) Error() string {
+	return fmt.Sprintf("%v: Can't get login info, detail: %s", e.GetISOFormat(), e.Detail)
+}
