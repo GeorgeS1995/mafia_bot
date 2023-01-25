@@ -19,7 +19,7 @@ import (
 )
 
 func TestSetAuthCookie(t *testing.T) {
-	// 1 неизменная 1 измененная 1 новая кука
+	// 1 unchanged 1 changed 1 new cookie
 	WillNotModifiedValue := test.RandStringRunes(3)
 	WillNotModidiedName := "WillNotModified"
 	WillChangedName := "WillChanged"
