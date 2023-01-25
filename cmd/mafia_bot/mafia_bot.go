@@ -4,6 +4,7 @@ import (
 	"github.com/GeorgeS1995/mafia_bot/internal/cfg"
 	db2 "github.com/GeorgeS1995/mafia_bot/internal/db"
 	"github.com/GeorgeS1995/mafia_bot/internal/discord"
+	"github.com/GeorgeS1995/mafia_bot/internal/pparser"
 	"log"
 	"os"
 	"os/signal"
@@ -29,6 +30,12 @@ func main() {
 	err = dg.Init()
 	if err != nil {
 		log.Fatal("Can't create discord client session, ", err)
+		return
+	}
+	pc := pparser.NewPolemicaApiClient(config.Pparser)
+	err = pc.Login(config.Pparser.Login, config.Pparser.Password)
+	if err != nil {
+		log.Fatal("Can't login on polemica site, ", err)
 		return
 	}
 	log.Println("Bot is now running.  Press CTRL-C to exit.")

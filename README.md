@@ -21,6 +21,17 @@
 - MAFIA_BOT_DB_USER - Пользователь для подключения к БД
 - MAFIA_BOT_DB_NAME - Название БД бота
 - MAFIA_BOT_DB_HOST - Название хоста БД, по умолчанию для контейнера `mafia-db`
+
+#### Параметры подключения к дискорд API
+
 - MAFIA_BOT_DISCORD_TOKEN - Токен дискорд бота
 - MAFIA_BOT_STATUS_CHANNELS - Перечисленные через запятую ID каналов куда бот будет отправлять диагностические
   сообщения (например что бот активен)
+
+#### Параметры подключения к API (взяты путем реверс инженеринга)
+
+- MAFIA_BOT_CSRF - csrf токен берется из лога общения после логина
+- MAFIA_BOT_CSRF_COOKIE - csrf cockie берется из лога обмена после обмена
+- MAFIA_BOT_POLEMICA_HOST - хост polemica
+- MAFIA_BOT_POLEMICA_LOGIN - логин на polemica
+- MAFIA_BOT_POLEMICA_PASSWORD - пароль на polemica

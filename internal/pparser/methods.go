@@ -1,0 +1,216 @@
+package pparser
+
+import (
+	"bytes"
+	"encoding/json"
+	"github.com/GeorgeS1995/mafia_bot/internal/cfg/pparser"
+	"strconv"
+	"sync"
+)
+
+type PolemicaApiClient struct {
+	Requester PolemicaRequestInterface
+	mu        sync.Mutex
+	DBhandler MafiaBotDBInterface
+}
+
+func NewPolemicaApiClient(cfg *pparser.MafiaBotPparserConfig) *PolemicaApiClient {
+	return &PolemicaApiClient{
+		Requester: NewPolemicaRequester(cfg),
+	}
+}
+
+type PolemicaLoginBody struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func (p *PolemicaApiClient) Login(username string, password string) error {
+	loginPath := "mf/guest/login"
+
+	b, err := json.Marshal(&PolemicaLoginBody{Username: username, Password: password})
+	if err != nil {
+		return &MafiaBotPolemicaParserLoginUnmarshalError{
+			Detail: err.Error(),
+		}
+	}
+
+	_, err = p.Requester.Request("POST", loginPath, bytes.NewBuffer(b), nil)
+	if err != nil {
+		return &MafiaBotPolemicaParserLoginResponselError{
+			Detail: err.Error(),
+		}
+	}
+
+	return nil
+}
+
+type GameResult int
+
+const (
+	Draw GameResult = iota
+	CityWin
+	MafiaWin
+)
+
+type MinimalPlayerGameStatistic struct {
+	ID       string
+	NickName string
+	Score    float32
+}
+
+type MinimalGameStatistic struct {
+	GameResult GameResult
+	Players    [10]MinimalPlayerGameStatistic
+}
+
+type ParseGameHistoryOptions struct {
+	Limit    int
+	ToGameID string
+}
+
+type ParseGameHistoryOptionsParser func(o *ParseGameHistoryOptions)
+
+func SetLimit(limit int) func(o *ParseGameHistoryOptions) {
+	return func(o *ParseGameHistoryOptions) {
+		o.Limit = limit
+	}
+}
+
+func SetToGameID(gameID string) func(o *ParseGameHistoryOptions) {
+	return func(o *ParseGameHistoryOptions) {
+		o.ToGameID = gameID
+	}
+}
+
+// Little helpers to determine the first error in goroutine
+
+type GoroutineGameParseError struct {
+	PageIdx        int
+	GameParseError error
+}
+
+type GoroutineGameParseErrorArray []GoroutineGameParseError
+
+func (a GoroutineGameParseErrorArray) GetFirstError() GoroutineGameParseError {
+	minIdx := int(^uint(0) >> 1) // max integer
+	var minGameParserError GoroutineGameParseError
+	for _, e := range a {
+		if e.PageIdx < minIdx {
+			minGameParserError = e
+			minIdx = e.PageIdx
+		}
+	}
+	return minGameParserError
+}
+
+func (p *PolemicaApiClient) ParseGamesHistory(userID int, opts ...ParseGameHistoryOptionsParser) error {
+	// kwargs patern for golang https://levelup.gitconnected.com/optional-function-parameter-pattern-in-golang-c1acc829307b
+	options := &ParseGameHistoryOptions{
+		30,
+		"",
+	}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	offset := 0
+
+	limitOffsetQueryParams := []*QueryParams{
+		{Param: "userId", Value: strconv.Itoa(userID)},
+		{Param: "offset", Value: strconv.Itoa(offset)},
+		{Param: "limit", Value: strconv.Itoa(options.Limit)},
+	}
+	gameHistoryPath := "cabinet/get"
+	// When totalGameToParse == totalParsedGame than all gorotine done and we can leave the func
+	totalGameToParse := 0
+	totalParsedGame := 0
+	pageParserCancelChan := make(chan bool)
+	var errorsList GoroutineGameParseErrorArray
+	defer func() {
+		if totalGameToParse > 0 {
+			<-pageParserCancelChan
+		}
+	}()
+	for {
+		polemicaGameHistoryResponse := &PolemicaGameHistoryResponse{}
+		resp, err := p.Requester.Request("GET", gameHistoryPath, nil, limitOffsetQueryParams)
+		if err != nil {
+			return &MafiaBotPolemicaParserParseGamesHistoryResponseError{
+				Detail:     err.Error(),
+				QueryParam: limitOffsetQueryParams,
+			}
+		}
+
+		err = json.Unmarshal(resp.Body, polemicaGameHistoryResponse)
+		if err != nil {
+			return &MafiaBotPolemicaParserParseGamesHistoryUnmarshalError{
+				Detail: err.Error(),
+			}
+		}
+		totalGameToParse += len(polemicaGameHistoryResponse.Rows)
+		for idx, row := range polemicaGameHistoryResponse.Rows {
+			gameId := row.Id
+			if options.ToGameID == gameId {
+				totalGameToParse -= len(polemicaGameHistoryResponse.Rows) - idx
+				return nil
+			}
+			goroutineIdx := idx
+			go func() {
+				defer func() {
+					totalParsedGame++
+					// Unlock thread with main func if it's last game
+					if totalParsedGame == totalGameToParse {
+						pageParserCancelChan <- true
+					}
+				}()
+				gameResult, goroutineErr := p.ParseGame(gameId)
+				if goroutineErr != nil {
+					errorsList = append(errorsList, GoroutineGameParseError{goroutineIdx, goroutineErr})
+					return
+				}
+				p.mu.Lock()
+				goroutineErr = p.DBhandler.SaveMinimalGameStatistic(gameResult)
+				if goroutineErr != nil {
+					errorsList = append(errorsList, GoroutineGameParseError{goroutineIdx, goroutineErr})
+				}
+				p.mu.Unlock()
+			}()
+		}
+		if len(errorsList) > 0 {
+			p.mu.Lock()
+			firstGoroutineGameParseError := errorsList.GetFirstError()
+			p.mu.Unlock()
+			return firstGoroutineGameParseError.GameParseError
+		} else if len(polemicaGameHistoryResponse.Rows) < options.Limit {
+			return nil
+		}
+		offset = offset + options.Limit
+		limitOffsetQueryParams[1].Value = strconv.Itoa(offset)
+	}
+}
+
+func (p *PolemicaApiClient) ParseGame(gameID string) (MinimalGameStatistic, error) {
+	GameStatisticUrl := "game-statistics/" + gameID
+	resp, err := p.Requester.Request("POST", GameStatisticUrl, nil, nil)
+	if err != nil {
+		return MinimalGameStatistic{}, &MafiaBotPolemicaParserParseGameResponseError{Detail: err.Error(), GameID: gameID}
+	}
+	gameStatisticsResponse := &GameStatisticsResponse{}
+	err = json.Unmarshal(resp.Body, gameStatisticsResponse)
+	if err != nil {
+		return MinimalGameStatistic{}, &MafiaBotPolemicaParserParseGameUnmarshalError{Detail: err.Error(), GameID: gameID}
+	}
+	minimalGameStatisticArray := [10]MinimalPlayerGameStatistic{}
+	for idx, player := range gameStatisticsResponse.Players {
+		minimalGameStatisticArray[idx] = MinimalPlayerGameStatistic{
+			ID:       player.Id,
+			NickName: player.Username,
+			Score:    player.AchievementsSum.Points,
+		}
+	}
+	return MinimalGameStatistic{
+		GameResult: GameResult(gameStatisticsResponse.WinnerCode),
+		Players:    minimalGameStatisticArray,
+	}, nil
+}
