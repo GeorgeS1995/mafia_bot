@@ -35,7 +35,7 @@ func main() {
 	pc := pparser.NewPolemicaApiClient(config.Pparser)
 	err = pc.Login(config.Pparser.Login, config.Pparser.Password)
 	if err != nil {
-		log.Fatal("Can't create discord client session, ", err)
+		log.Fatal("Can't login on polemica site, ", err)
 		return
 	}
 	log.Println("Bot is now running.  Press CTRL-C to exit.")
