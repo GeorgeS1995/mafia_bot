@@ -11,11 +11,9 @@ type MafiaBotDBConfig struct {
 	User     string
 	Password string
 	DBname   string
-	DSN      string
 }
 
 func NewMafiaBotDBConfig() (*MafiaBotDBConfig, error) {
-	dsn_template := "host=%s user=%s password=%s dbname=%s port=5432"
 	dbConfig := &MafiaBotDBConfig{}
 	host := dbConfig.getHost()
 	user, err := dbConfig.getUser()
@@ -30,13 +28,19 @@ func NewMafiaBotDBConfig() (*MafiaBotDBConfig, error) {
 	if err != nil {
 		return dbConfig, err
 	}
-	dsn := fmt.Sprintf(dsn_template, host, user, password, dbname)
 	dbConfig.Host = host
 	dbConfig.User = user
 	dbConfig.Password = password
 	dbConfig.DBname = dbname
-	dbConfig.DSN = dsn
 	return dbConfig, nil
+}
+
+func (c *MafiaBotDBConfig) GetDSN() string {
+	if c.Host == "" || c.User == "" || c.Password == "" || c.DBname == "" {
+		return ""
+	}
+	dsnTemplate := "host=%s user=%s password=%s dbname=%s port=5432"
+	return fmt.Sprintf(dsnTemplate, c.Host, c.User, c.Password, c.DBname)
 }
 
 func (c *MafiaBotDBConfig) getHost() string {

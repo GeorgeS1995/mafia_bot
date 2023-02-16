@@ -7,43 +7,81 @@ package test_db
 import (
 	reflect "reflect"
 
-	pparser "github.com/GeorgeS1995/mafia_bot/internal/pparser"
 	gomock "github.com/golang/mock/gomock"
+	gorm "gorm.io/gorm"
 )
 
-// MockMafiaBotDBInterface is a mock of MafiaBotDBInterface interface.
-type MockMafiaBotDBInterface struct {
+// MockMafiaGormInterface is a mock of MafiaGormInterface interface.
+type MockMafiaGormInterface struct {
 	ctrl     *gomock.Controller
-	recorder *MockMafiaBotDBInterfaceMockRecorder
+	recorder *MockMafiaGormInterfaceMockRecorder
 }
 
-// MockMafiaBotDBInterfaceMockRecorder is the mock recorder for MockMafiaBotDBInterface.
-type MockMafiaBotDBInterfaceMockRecorder struct {
-	mock *MockMafiaBotDBInterface
+// MockMafiaGormInterfaceMockRecorder is the mock recorder for MockMafiaGormInterface.
+type MockMafiaGormInterfaceMockRecorder struct {
+	mock *MockMafiaGormInterface
 }
 
-// NewMockMafiaBotDBInterface creates a new mock instance.
-func NewMockMafiaBotDBInterface(ctrl *gomock.Controller) *MockMafiaBotDBInterface {
-	mock := &MockMafiaBotDBInterface{ctrl: ctrl}
-	mock.recorder = &MockMafiaBotDBInterfaceMockRecorder{mock}
+// NewMockMafiaGormInterface creates a new mock instance.
+func NewMockMafiaGormInterface(ctrl *gomock.Controller) *MockMafiaGormInterface {
+	mock := &MockMafiaGormInterface{ctrl: ctrl}
+	mock.recorder = &MockMafiaGormInterfaceMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockMafiaBotDBInterface) EXPECT() *MockMafiaBotDBInterfaceMockRecorder {
+func (m *MockMafiaGormInterface) EXPECT() *MockMafiaGormInterfaceMockRecorder {
 	return m.recorder
 }
 
-// SaveMinimalGameStatistic mocks base method.
-func (m *MockMafiaBotDBInterface) SaveMinimalGameStatistic(arg0 pparser.MinimalGameStatistic) error {
+// First mocks base method.
+func (m *MockMafiaGormInterface) First(dest interface{}, conds ...interface{}) *gorm.DB {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveMinimalGameStatistic", arg0)
-	ret0, _ := ret[0].(error)
+	varargs := []interface{}{dest}
+	for _, a := range conds {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "First", varargs...)
+	ret0, _ := ret[0].(*gorm.DB)
 	return ret0
 }
 
-// SaveMinimalGameStatistic indicates an expected call of SaveMinimalGameStatistic.
-func (mr *MockMafiaBotDBInterfaceMockRecorder) SaveMinimalGameStatistic(arg0 interface{}) *gomock.Call {
+// First indicates an expected call of First.
+func (mr *MockMafiaGormInterfaceMockRecorder) First(dest interface{}, conds ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMinimalGameStatistic", reflect.TypeOf((*MockMafiaBotDBInterface)(nil).SaveMinimalGameStatistic), arg0)
+	varargs := append([]interface{}{dest}, conds...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockMafiaGormInterface)(nil).First), varargs...)
+}
+
+// Save mocks base method.
+func (m *MockMafiaGormInterface) Save(value interface{}) *gorm.DB {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Save", value)
+	ret0, _ := ret[0].(*gorm.DB)
+	return ret0
+}
+
+// Save indicates an expected call of Save.
+func (mr *MockMafiaGormInterfaceMockRecorder) Save(value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockMafiaGormInterface)(nil).Save), value)
+}
+
+// Where mocks base method.
+func (m *MockMafiaGormInterface) Where(query interface{}, args ...interface{}) *gorm.DB {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{query}
+	for _, a := range args {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Where", varargs...)
+	ret0, _ := ret[0].(*gorm.DB)
+	return ret0
+}
+
+// Where indicates an expected call of Where.
+func (mr *MockMafiaGormInterfaceMockRecorder) Where(query interface{}, args ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{query}, args...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Where", reflect.TypeOf((*MockMafiaGormInterface)(nil).Where), varargs...)
 }

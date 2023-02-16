@@ -88,3 +88,40 @@ func (mr *MockPolemicaRequestInterfaceMockRecorder) Request(method, url, body, q
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Request", reflect.TypeOf((*MockPolemicaRequestInterface)(nil).Request), method, url, body, queryParams)
 }
+
+// MockMafiaBotDBInterface is a mock of MafiaBotDBInterface interface.
+type MockMafiaBotDBInterface struct {
+	ctrl     *gomock.Controller
+	recorder *MockMafiaBotDBInterfaceMockRecorder
+}
+
+// MockMafiaBotDBInterfaceMockRecorder is the mock recorder for MockMafiaBotDBInterface.
+type MockMafiaBotDBInterfaceMockRecorder struct {
+	mock *MockMafiaBotDBInterface
+}
+
+// NewMockMafiaBotDBInterface creates a new mock instance.
+func NewMockMafiaBotDBInterface(ctrl *gomock.Controller) *MockMafiaBotDBInterface {
+	mock := &MockMafiaBotDBInterface{ctrl: ctrl}
+	mock.recorder = &MockMafiaBotDBInterfaceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMafiaBotDBInterface) EXPECT() *MockMafiaBotDBInterfaceMockRecorder {
+	return m.recorder
+}
+
+// SaveMinimalGameStatistic mocks base method.
+func (m *MockMafiaBotDBInterface) SaveMinimalGameStatistic(arg0 pparser.MinimalGameStatistic) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveMinimalGameStatistic", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveMinimalGameStatistic indicates an expected call of SaveMinimalGameStatistic.
+func (mr *MockMafiaBotDBInterfaceMockRecorder) SaveMinimalGameStatistic(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMinimalGameStatistic", reflect.TypeOf((*MockMafiaBotDBInterface)(nil).SaveMinimalGameStatistic), arg0)
+}

@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/GeorgeS1995/mafia_bot/internal/cfg/pparser"
+	"github.com/GeorgeS1995/mafia_bot/internal/db"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type PolemicaApiClient struct {
@@ -45,14 +47,6 @@ func (p *PolemicaApiClient) Login(username string, password string) error {
 	return nil
 }
 
-type GameResult int
-
-const (
-	Draw GameResult = iota
-	CityWin
-	MafiaWin
-)
-
 type MinimalPlayerGameStatistic struct {
 	ID       string
 	NickName string
@@ -60,7 +54,9 @@ type MinimalPlayerGameStatistic struct {
 }
 
 type MinimalGameStatistic struct {
-	GameResult GameResult
+	ID         string
+	GameResult db.GameResult
+	StartedAt  time.Time
 	Players    [10]MinimalPlayerGameStatistic
 }
 
@@ -156,6 +152,7 @@ func (p *PolemicaApiClient) ParseGamesHistory(userID int, opts ...ParseGameHisto
 				return nil
 			}
 			goroutineIdx := idx
+			goroutineRow := row
 			go func() {
 				defer func() {
 					totalParsedGame++
@@ -169,6 +166,14 @@ func (p *PolemicaApiClient) ParseGamesHistory(userID int, opts ...ParseGameHisto
 					errorsList = append(errorsList, GoroutineGameParseError{goroutineIdx, goroutineErr})
 					return
 				}
+				// Add game started date
+				date, goroutineErr := time.Parse(PolemicaTimeFormat, goroutineRow.DateStart)
+				if goroutineErr != nil {
+					errorsList = append(errorsList, GoroutineGameParseError{goroutineIdx, goroutineErr})
+					return
+				}
+				gameResult.StartedAt = date
+
 				p.mu.Lock()
 				goroutineErr = p.DBhandler.SaveMinimalGameStatistic(gameResult)
 				if goroutineErr != nil {
@@ -209,8 +214,15 @@ func (p *PolemicaApiClient) ParseGame(gameID string) (MinimalGameStatistic, erro
 			Score:    player.AchievementsSum.Points,
 		}
 	}
+	gameResult, err := db.ToGameResult(gameStatisticsResponse.WinnerCode)
+	if err != nil {
+		return MinimalGameStatistic{}, &MafiaBotPolemicaParserParseGameEnumConvertationError{
+			Detail: err.Error(),
+		}
+	}
 	return MinimalGameStatistic{
-		GameResult: GameResult(gameStatisticsResponse.WinnerCode),
+		GameResult: gameResult,
 		Players:    minimalGameStatisticArray,
+		ID:         gameID,
 	}, nil
 }
