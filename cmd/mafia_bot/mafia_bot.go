@@ -17,9 +17,14 @@ func main() {
 		log.Fatal("Can't parse config, ", err)
 		return
 	}
-	_, err = db2.NewMafiaDB(*config.DB)
+	db, err := db2.NewMafiaDB(*config.DB)
 	if err != nil {
 		log.Fatal("Can't create db connection, ", err)
+		return
+	}
+	err = db.Init()
+	if err != nil {
+		log.Fatal("Can't init db migration, ", err)
 		return
 	}
 	dg, err := discord.NewMafiaDiscordBot(config.Discord.Token)

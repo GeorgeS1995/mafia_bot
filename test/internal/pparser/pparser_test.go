@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GeorgeS1995/mafia_bot/internal/db"
 	"github.com/GeorgeS1995/mafia_bot/internal/pparser"
 	"github.com/GeorgeS1995/mafia_bot/test"
-	test_db "github.com/GeorgeS1995/mafia_bot/test/internal/db"
 	"github.com/golang/mock/gomock"
 	"io"
 	"log"
@@ -148,8 +148,12 @@ func TestPolemicaParserParseGameOK(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ParseGame unexpected error: %s", err.Error())
 	}
-	if int(resp.GameResult) != gameStatisticResponse.WinnerCode {
-		t.Fatalf("ParseGame winner codes aren't equal. \nExpected: %d\nAsserted %d", gameStatisticResponse.WinnerCode, resp.GameResult)
+	expectedGameResult, err := db.ToGameResult(gameStatisticResponse.WinnerCode)
+	if err != nil {
+		t.Fatalf("Error while convert winner code to enum: %s", err.Error())
+	}
+	if resp.GameResult != expectedGameResult {
+		t.Fatalf("ParseGame winner codes aren't equal. \nExpected: %s\nAsserted %s", expectedGameResult, resp.GameResult)
 	}
 	for idx, p := range gameStatisticResponse.Players {
 		if p.Id != resp.Players[idx].ID {
@@ -195,6 +199,27 @@ func TestPolemicaParserParseGameUnmarshalError(t *testing.T) {
 	}
 }
 
+func TestPolemicaParserParseGameEnumConvertationError(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	gameId := strconv.Itoa(rand.Intn(100001))
+	gameStatisticResponse := RandomGameStatisticsResponse(gameId)
+	gameStatisticResponse.WinnerCode = 3
+	b, _ := json.Marshal(gameStatisticResponse)
+	ctrl := gomock.NewController(t)
+	m := NewMockPolemicaRequestInterface(ctrl)
+	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&pparser.PolemicaResponse{Body: b, StatusCode: 200}, nil)
+	pParser := pparser.PolemicaApiClient{
+		Requester: m,
+	}
+
+	_, err := pParser.ParseGame(gameId)
+
+	if _, ok := err.(*pparser.MafiaBotPolemicaParserParseGameEnumConvertationError); !ok {
+		t.Fatalf("Wrong error type: %s", err)
+	}
+}
+
 // Test p.ParseGamesHistory method
 func TestPolemicaParserParseGamesHistoryOK(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
@@ -209,10 +234,10 @@ func TestPolemicaParserParseGamesHistoryOK(t *testing.T) {
 			marshaled := []byte{}
 			if method == "GET" {
 				rows := []pparser.PolemicaGameHistoryResponseRow{
-					{Id: strconv.Itoa(rand.Intn(100001))},
+					{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat},
 				}
 				if !isSecondPage {
-					rows = append(rows, pparser.PolemicaGameHistoryResponseRow{Id: strconv.Itoa(rand.Intn(100001))})
+					rows = append(rows, pparser.PolemicaGameHistoryResponseRow{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat})
 					isSecondPage = true
 				}
 				to_marshal := &pparser.PolemicaGameHistoryResponse{
@@ -229,7 +254,7 @@ func TestPolemicaParserParseGamesHistoryOK(t *testing.T) {
 			return response, nil
 		}).Times(5)
 	// Saver mock
-	dbMock := test_db.NewMockMafiaBotDBInterface(ctrl)
+	dbMock := NewMockMafiaBotDBInterface(ctrl)
 	dbMock.EXPECT().SaveMinimalGameStatistic(gomock.Any()).Times(3)
 	// Create test PolemicaApiClient
 	pParser := pparser.PolemicaApiClient{
@@ -263,8 +288,8 @@ func TestPolemicaParserParseGamesHistoryOKStopByGameId(t *testing.T) {
 				}
 				to_marshal := &pparser.PolemicaGameHistoryResponse{
 					Rows: []pparser.PolemicaGameHistoryResponseRow{
-						{Id: strconv.Itoa(rand.Intn(100001))},
-						{Id: gameId},
+						{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat},
+						{Id: gameId, DateStart: pparser.PolemicaTimeFormat},
 					},
 				}
 				marshaled, _ = json.Marshal(to_marshal)
@@ -277,7 +302,7 @@ func TestPolemicaParserParseGamesHistoryOKStopByGameId(t *testing.T) {
 			return response, nil
 		}).Times(5)
 	// Saver mock
-	dbMock := test_db.NewMockMafiaBotDBInterface(ctrl)
+	dbMock := NewMockMafiaBotDBInterface(ctrl)
 	dbMock.EXPECT().SaveMinimalGameStatistic(gomock.Any()).Times(3)
 	// Create test PolemicaApiClient
 	pParser := pparser.PolemicaApiClient{

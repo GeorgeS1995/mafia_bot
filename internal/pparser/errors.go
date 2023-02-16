@@ -66,6 +66,15 @@ func (e *MafiaBotPolemicaParserParseGameUnmarshalError) Error() string {
 	return fmt.Sprintf("%v: Can't unmarshal game %s info, detail: %s", e.GetISOFormat(), e.GameID, e.Detail)
 }
 
+type MafiaBotPolemicaParserParseGameEnumConvertationError struct {
+	MafiaBotPolemicaParserError
+	Detail string
+}
+
+func (e *MafiaBotPolemicaParserParseGameEnumConvertationError) Error() string {
+	return fmt.Sprintf("%v: Can't convert game statistic, detail: %s", e.GetISOFormat(), e.Detail)
+}
+
 type MafiaBotPolemicaParserParseGamesHistoryResponseError struct {
 	MafiaBotPolemicaParserError
 	Detail     string
@@ -105,4 +114,31 @@ type MafiaBotPolemicaParserLoginResponselError struct {
 
 func (e *MafiaBotPolemicaParserLoginResponselError) Error() string {
 	return fmt.Sprintf("%v: Can't get login info, detail: %s", e.GetISOFormat(), e.Detail)
+}
+
+type MafiaBotPolemicaParserSaveMinimalGameStatisticUserError struct {
+	MafiaBotPolemicaParserError
+	Detail string
+}
+
+func (e *MafiaBotPolemicaParserSaveMinimalGameStatisticUserError) Error() string {
+	return fmt.Sprintf("%v: Can't create or update user: %s", e.GetISOFormat(), e.Detail)
+}
+
+type MafiaBotPolemicaParserSaveMinimalGameStatisticGameError struct {
+	MafiaBotPolemicaParserError
+	Detail string
+}
+
+func (e *MafiaBotPolemicaParserSaveMinimalGameStatisticGameError) Error() string {
+	return fmt.Sprintf("%v: Can't create game object: %s", e.GetISOFormat(), e.Detail)
+}
+
+type MafiaBotPolemicaParserSaveMinimalGameStatisticPlayerGameError struct {
+	MafiaBotPolemicaParserError
+	Detail string
+}
+
+func (e *MafiaBotPolemicaParserSaveMinimalGameStatisticPlayerGameError) Error() string {
+	return fmt.Sprintf("%v: Can't create game object: %s", e.GetISOFormat(), e.Detail)
 }

@@ -7,14 +7,14 @@ import (
 )
 
 type MafiaDB struct {
-	db *gorm.DB
+	Db *gorm.DB
 }
 
 func NewMafiaDB(config db.MafiaBotDBConfig) (*MafiaDB, error) {
-	dsn := config.DSN
+	dsn := config.GetDSN()
 	connetion, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
-	return &MafiaDB{db: connetion}, nil
+	return &MafiaDB{Db: connetion}, nil
 }
