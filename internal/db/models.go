@@ -26,7 +26,7 @@ type PlayerGame struct {
 	Points float32
 }
 
-// TODO move to the separated table info about thirdPartyServices
+// User TODO move to the separated table info about thirdPartyServices
 type User struct {
 	MafiaBaseModel
 	PolemicaNickName string

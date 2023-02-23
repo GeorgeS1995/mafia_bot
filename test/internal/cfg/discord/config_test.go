@@ -27,7 +27,7 @@ func TestGetTokenOK(t *testing.T) {
 func TestGetTokenNotSet(t *testing.T) {
 	discordConfig, err := discord.NewMafiaBotDiscordConfig()
 
-	expectedErr := common.MafiaBotParseError{ParsedAttr: "MAFIA_BOT_DISCORD_TOKEN"}
+	expectedErr := common.MafiaBotParseMissingRequiredParamError{ParsedAttr: "MAFIA_BOT_DISCORD_TOKEN"}
 	expectedErrorMsg := expectedErr.Error()
 	if err == nil || err.Error() != expectedErrorMsg {
 		t.Fatalf("Unexpected error while parsing discord config: %v", err)

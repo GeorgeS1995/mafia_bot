@@ -9,6 +9,7 @@ import (
 	http "net/http"
 	reflect "reflect"
 
+	db "github.com/GeorgeS1995/mafia_bot/internal/db"
 	pparser "github.com/GeorgeS1995/mafia_bot/internal/pparser"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -74,6 +75,20 @@ func (m *MockPolemicaRequestInterface) EXPECT() *MockPolemicaRequestInterfaceMoc
 	return m.recorder
 }
 
+// GetCurrentUserID mocks base method.
+func (m *MockPolemicaRequestInterface) GetCurrentUserID() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentUserID")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetCurrentUserID indicates an expected call of GetCurrentUserID.
+func (mr *MockPolemicaRequestInterfaceMockRecorder) GetCurrentUserID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentUserID", reflect.TypeOf((*MockPolemicaRequestInterface)(nil).GetCurrentUserID))
+}
+
 // Request mocks base method.
 func (m *MockPolemicaRequestInterface) Request(method, url string, body io.Reader, queryParams []*pparser.QueryParams) (*pparser.PolemicaResponse, error) {
 	m.ctrl.T.Helper()
@@ -89,31 +104,46 @@ func (mr *MockPolemicaRequestInterfaceMockRecorder) Request(method, url, body, q
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Request", reflect.TypeOf((*MockPolemicaRequestInterface)(nil).Request), method, url, body, queryParams)
 }
 
-// MockMafiaBotDBInterface is a mock of MafiaBotDBInterface interface.
-type MockMafiaBotDBInterface struct {
+// MockMafiaBotServiceInterface is a mock of MafiaBotServiceInterface interface.
+type MockMafiaBotServiceInterface struct {
 	ctrl     *gomock.Controller
-	recorder *MockMafiaBotDBInterfaceMockRecorder
+	recorder *MockMafiaBotServiceInterfaceMockRecorder
 }
 
-// MockMafiaBotDBInterfaceMockRecorder is the mock recorder for MockMafiaBotDBInterface.
-type MockMafiaBotDBInterfaceMockRecorder struct {
-	mock *MockMafiaBotDBInterface
+// MockMafiaBotServiceInterfaceMockRecorder is the mock recorder for MockMafiaBotServiceInterface.
+type MockMafiaBotServiceInterfaceMockRecorder struct {
+	mock *MockMafiaBotServiceInterface
 }
 
-// NewMockMafiaBotDBInterface creates a new mock instance.
-func NewMockMafiaBotDBInterface(ctrl *gomock.Controller) *MockMafiaBotDBInterface {
-	mock := &MockMafiaBotDBInterface{ctrl: ctrl}
-	mock.recorder = &MockMafiaBotDBInterfaceMockRecorder{mock}
+// NewMockMafiaBotServiceInterface creates a new mock instance.
+func NewMockMafiaBotServiceInterface(ctrl *gomock.Controller) *MockMafiaBotServiceInterface {
+	mock := &MockMafiaBotServiceInterface{ctrl: ctrl}
+	mock.recorder = &MockMafiaBotServiceInterfaceMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockMafiaBotDBInterface) EXPECT() *MockMafiaBotDBInterfaceMockRecorder {
+func (m *MockMafiaBotServiceInterface) EXPECT() *MockMafiaBotServiceInterfaceMockRecorder {
 	return m.recorder
 }
 
+// GetLastGame mocks base method.
+func (m *MockMafiaBotServiceInterface) GetLastGame() (*db.Game, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastGame")
+	ret0, _ := ret[0].(*db.Game)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastGame indicates an expected call of GetLastGame.
+func (mr *MockMafiaBotServiceInterfaceMockRecorder) GetLastGame() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastGame", reflect.TypeOf((*MockMafiaBotServiceInterface)(nil).GetLastGame))
+}
+
 // SaveMinimalGameStatistic mocks base method.
-func (m *MockMafiaBotDBInterface) SaveMinimalGameStatistic(arg0 pparser.MinimalGameStatistic) error {
+func (m *MockMafiaBotServiceInterface) SaveMinimalGameStatistic(arg0 pparser.MinimalGameStatistic) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveMinimalGameStatistic", arg0)
 	ret0, _ := ret[0].(error)
@@ -121,7 +151,49 @@ func (m *MockMafiaBotDBInterface) SaveMinimalGameStatistic(arg0 pparser.MinimalG
 }
 
 // SaveMinimalGameStatistic indicates an expected call of SaveMinimalGameStatistic.
-func (mr *MockMafiaBotDBInterfaceMockRecorder) SaveMinimalGameStatistic(arg0 interface{}) *gomock.Call {
+func (mr *MockMafiaBotServiceInterfaceMockRecorder) SaveMinimalGameStatistic(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMinimalGameStatistic", reflect.TypeOf((*MockMafiaBotDBInterface)(nil).SaveMinimalGameStatistic), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMinimalGameStatistic", reflect.TypeOf((*MockMafiaBotServiceInterface)(nil).SaveMinimalGameStatistic), arg0)
+}
+
+// MockPolemicaParserInterface is a mock of PolemicaParserInterface interface.
+type MockPolemicaParserInterface struct {
+	ctrl     *gomock.Controller
+	recorder *MockPolemicaParserInterfaceMockRecorder
+}
+
+// MockPolemicaParserInterfaceMockRecorder is the mock recorder for MockPolemicaParserInterface.
+type MockPolemicaParserInterfaceMockRecorder struct {
+	mock *MockPolemicaParserInterface
+}
+
+// NewMockPolemicaParserInterface creates a new mock instance.
+func NewMockPolemicaParserInterface(ctrl *gomock.Controller) *MockPolemicaParserInterface {
+	mock := &MockPolemicaParserInterface{ctrl: ctrl}
+	mock.recorder = &MockPolemicaParserInterfaceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPolemicaParserInterface) EXPECT() *MockPolemicaParserInterfaceMockRecorder {
+	return m.recorder
+}
+
+// ParseGamesHistory mocks base method.
+func (m *MockPolemicaParserInterface) ParseGamesHistory(userID int, opts ...pparser.ParseGameHistoryOptionsParser) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{userID}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ParseGamesHistory", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ParseGamesHistory indicates an expected call of ParseGamesHistory.
+func (mr *MockPolemicaParserInterfaceMockRecorder) ParseGamesHistory(userID interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{userID}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParseGamesHistory", reflect.TypeOf((*MockPolemicaParserInterface)(nil).ParseGamesHistory), varargs...)
 }

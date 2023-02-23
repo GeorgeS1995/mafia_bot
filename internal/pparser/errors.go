@@ -34,7 +34,16 @@ type MafiaBotPolemicaParserServerResponseError struct {
 }
 
 func (e *MafiaBotPolemicaParserServerResponseError) Error() string {
-	return fmt.Sprintf("%v: Not 200x response.\n Code: %s\n Body: %s\n", e.GetISOFormat(), e.ResponseCode, e.ResponseBody)
+	return fmt.Sprintf("%v: Not 200x response.\n Code: %d\n Body: %s\n", e.GetISOFormat(), e.ResponseCode, e.ResponseBody)
+}
+
+type MafiaBotPolemicaParserSetUserIDError struct {
+	MafiaBotPolemicaParserError
+	Detail string
+}
+
+func (e *MafiaBotPolemicaParserSetUserIDError) Error() string {
+	return fmt.Sprintf("%v: Error while determining user ID: %s", e.GetISOFormat(), e.Detail)
 }
 
 type MafiaBotPolemicaParserResponseBodyParsingError struct {
@@ -141,4 +150,22 @@ type MafiaBotPolemicaParserSaveMinimalGameStatisticPlayerGameError struct {
 
 func (e *MafiaBotPolemicaParserSaveMinimalGameStatisticPlayerGameError) Error() string {
 	return fmt.Sprintf("%v: Can't create game object: %s", e.GetISOFormat(), e.Detail)
+}
+
+type MafiaBotPolemicaParserSetUserIDFromCookieDecodeError struct {
+	MafiaBotPolemicaParserError
+	Detail string
+}
+
+func (e *MafiaBotPolemicaParserSetUserIDFromCookieDecodeError) Error() string {
+	return fmt.Sprintf("%v: Can't decode raw coockie: %s", e.GetISOFormat(), e.Detail)
+}
+
+type MafiaBotPolemicaParserSetUserIDFromCookieRegexError struct {
+	MafiaBotPolemicaParserError
+	CookieBody string
+}
+
+func (e *MafiaBotPolemicaParserSetUserIDFromCookieRegexError) Error() string {
+	return fmt.Sprintf("%v: user id not foung in \"_id-maf11front\" cookie. Cookie body: %s", e.GetISOFormat(), e.CookieBody)
 }

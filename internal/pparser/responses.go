@@ -1,6 +1,6 @@
 package pparser
 
-// Response from /cabinet/get/
+// PolemicaGameHistoryResponseRow Response from /cabinet/get/
 type PolemicaGameHistoryResponseRow struct {
 	Id        string  `json:"id"`
 	DateStart string  `json:"date_start"`
@@ -27,7 +27,7 @@ type PolemicaGameHistoryResponse struct {
 	TotalCount string                           `json:"totalCount"`
 }
 
-// Response from /game-statistics/{gameID}
+// GameStatisticsAchievementsSum Response from /game-statistics/{gameID}
 type GameStatisticsAchievementsSum struct {
 	Points       float32 `json:"points"`
 	Achievements struct {

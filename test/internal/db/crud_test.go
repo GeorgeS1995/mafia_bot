@@ -28,8 +28,9 @@ func (suite *DBPackageTestSuite) TestUpdateOrCreateUserExistingUserOK() {
 	}
 	suite.Tx.Create(existingUser)
 	creatAt := existingUser.CreatedAt
+	mafiaDB := &db.MafiaDB{Db: suite.Tx}
 
-	user, err := db.UpdateOrCreateUser(suite.Tx, &db.User{
+	user, err := mafiaDB.UpdateOrCreateUser(&db.User{
 		PolemicaId:       polemicaID,
 		PolemicaNickName: polemicaNickNameNew,
 	})
@@ -52,8 +53,9 @@ func (suite *DBPackageTestSuite) TestUpdateOrCreateUserCreateOK() {
 	defer suite.Tx.Rollback()
 	polemicaID := test.RandStringRunes(3)
 	polemicaNickName := test.RandStringRunes(3)
+	mafiaDB := &db.MafiaDB{Db: suite.Tx}
 
-	user, err := db.UpdateOrCreateUser(suite.Tx, &db.User{
+	user, err := mafiaDB.UpdateOrCreateUser(&db.User{
 		PolemicaId:       polemicaID,
 		PolemicaNickName: polemicaNickName,
 	})
@@ -70,4 +72,29 @@ func (suite *DBPackageTestSuite) TestUpdateOrCreateUserCreateOK() {
 	assert.Equal(suite.T(), assertedUser.PolemicaNickName, polemicaNickName)
 	assert.Equal(suite.T(), assertedUser.UpdatedAt.Round(time.Minute), timeNow.Round(time.Minute))
 	assert.Equal(suite.T(), assertedUser.CreatedAt.Round(time.Minute), timeNow.Round(time.Minute))
+}
+
+func (suite *DBPackageTestSuite) TestGetLastGame() {
+	defer suite.Tx.Rollback()
+	suite.Tx.Create(&db.Game{StartedAt: time.Now(), Winner: db.Draw})
+	lastGameTime := time.Now().Add(time.Hour)
+	expectedlastGame := &db.Game{StartedAt: lastGameTime, Winner: db.Draw}
+	suite.Tx.Create(expectedlastGame)
+	mafiaDB := &db.MafiaDB{Db: suite.Tx}
+
+	lastGame, err := mafiaDB.GetLastGame()
+
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), expectedlastGame.ID, lastGame.ID)
+	assert.Equal(suite.T(), lastGame.StartedAt.Round(time.Second), lastGameTime.Round(time.Second))
+}
+
+func (suite *DBPackageTestSuite) TestGetLastGameEmptyDB() {
+	defer suite.Tx.Rollback()
+	mafiaDB := &db.MafiaDB{Db: suite.Tx}
+
+	_, err := mafiaDB.GetLastGame()
+	if _, ok := err.(*db.MafiaBotGetLastGameEmptyDBError); !ok {
+		suite.T().Fatalf("Wrong error type: %s", err)
+	}
 }
