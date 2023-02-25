@@ -13,11 +13,20 @@ func (e *MafiaBotConfigError) Error() string {
 	return fmt.Sprintf("%v: Config parse mafia bot error", e.GetISOFormat())
 }
 
-type MafiaBotParseError struct {
+type MafiaBotParseMissingRequiredParamError struct {
 	MafiaBotConfigError
 	ParsedAttr string
 }
 
-func (e *MafiaBotParseError) Error() string {
-	return fmt.Sprintf("%v: DB env %s is requierd parameter", e.GetISOFormat(), e.ParsedAttr)
+func (e *MafiaBotParseMissingRequiredParamError) Error() string {
+	return fmt.Sprintf("%v: Env %s is requierd parameter", e.GetISOFormat(), e.ParsedAttr)
+}
+
+type MafiaBotParseTypeError struct {
+	MafiaBotConfigError
+	ParsedAttr string
+}
+
+func (e *MafiaBotParseTypeError) Error() string {
+	return fmt.Sprintf("%v: Wrong type of env: %s", e.GetISOFormat(), e.ParsedAttr)
 }

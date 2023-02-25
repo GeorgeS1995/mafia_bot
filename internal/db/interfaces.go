@@ -1,9 +1,13 @@
 package db
 
-import "gorm.io/gorm"
+import (
+	"database/sql"
+	"gorm.io/gorm"
+)
 
-type MafiaGormInterface interface {
-	Where(query interface{}, args ...interface{}) (tx *gorm.DB)
-	Save(value interface{}) (tx *gorm.DB)
-	First(dest interface{}, conds ...interface{}) (tx *gorm.DB)
+type MafiaDBInterface interface {
+	UpdateOrCreateUser(user *User) (*User, error)
+	GetLastGame() (*Game, error)
+	Create(value interface{}) error
+	Transaction(fc func(tx *gorm.DB) error, opts ...*sql.TxOptions) (err error)
 }

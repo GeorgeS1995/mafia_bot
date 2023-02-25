@@ -35,3 +35,20 @@ type MafiaBotUpdateOrCreateUserSaveError struct {
 func (e *MafiaBotUpdateOrCreateUserSaveError) Error() string {
 	return fmt.Sprintf("%v: Error while save user object to db: %s", e.GetISOFormat(), e.Detail)
 }
+
+type MafiaBotGetLastGameDriverError struct {
+	MafiaBotEnumError
+	Detail string
+}
+
+func (e *MafiaBotGetLastGameDriverError) Error() string {
+	return fmt.Sprintf("%v: Error while retrieve last game: %s", e.GetISOFormat(), e.Detail)
+}
+
+type MafiaBotGetLastGameEmptyDBError struct {
+	MafiaBotEnumError
+}
+
+func (e *MafiaBotGetLastGameEmptyDBError) Error() string {
+	return fmt.Sprintf("%v: Empty game table", e.GetISOFormat())
+}

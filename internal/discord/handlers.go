@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-// TODO refactor to goroutin
+// Greetings TODO refactor to goroutin
 func Greetings(s MafiaBotInterfaces, guilds []*discordgo.Guild) error {
 	// Is there a flexible way to pass config
 	discordConfig, _ := discord.NewMafiaBotDiscordConfig()

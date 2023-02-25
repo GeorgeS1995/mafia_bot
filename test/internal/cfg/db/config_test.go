@@ -87,8 +87,8 @@ func TestGetDSNRequiredAttrError(t *testing.T) {
 			if dsn != "" {
 				t.Fatalf("Dsn %v is not equal expected.", dsn)
 			}
-			var expectedErr common.MafiaBotParseError
-			expectedErr = common.MafiaBotParseError{ParsedAttr: requiredAttr}
+			var expectedErr common.MafiaBotParseMissingRequiredParamError
+			expectedErr = common.MafiaBotParseMissingRequiredParamError{ParsedAttr: requiredAttr}
 			expectedErrorMsg := expectedErr.Error()
 			if err == nil || err.Error() != expectedErrorMsg {
 				t.Fatalf("Unexpected error while parsing db config: %v", err)

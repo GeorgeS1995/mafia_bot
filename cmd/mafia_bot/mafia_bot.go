@@ -37,17 +37,19 @@ func main() {
 		log.Fatal("Can't create discord client session, ", err)
 		return
 	}
-	pc := pparser.NewPolemicaApiClient(config.Pparser)
+	pc := pparser.NewPolemicaApiClient(config.Pparser, &pparser.MafiaParserServiceHandler{MafiaDBInterface: db})
 	err = pc.Login(config.Pparser.Login, config.Pparser.Password)
 	if err != nil {
 		log.Fatal("Can't login on polemica site, ", err)
 		return
 	}
+	parseGameHistoryQuite := make(chan bool)
+	pparser.ParseGameHistoryTask(db, pc, pc.Requester.GetCurrentUserID(), config.Pparser.ParseHistoryTaskDelay, parseGameHistoryQuite)
 	log.Println("Bot is now running.  Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
-
+	parseGameHistoryQuite <- true
 	// Cleanly close down the Discord session.
 	dg.Bot.Close()
 }

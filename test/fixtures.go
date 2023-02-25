@@ -4,20 +4,16 @@ import (
 	"fmt"
 	db2 "github.com/GeorgeS1995/mafia_bot/internal/cfg/db"
 	"github.com/GeorgeS1995/mafia_bot/internal/db"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 	"log"
 	"math/rand"
-	"time"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-// Copy paste from https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
+// RandStringRunes Copy paste from https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
 func RandStringRunes(n int) string {
 	b := make([]rune, n)
 	for i := range b {
@@ -28,8 +24,9 @@ func RandStringRunes(n int) string {
 
 type DBTestSuite struct {
 	suite.Suite
-	db *db.MafiaDB
-	Tx *gorm.DB
+	db     *db.MafiaDB
+	Tx     *gorm.DB
+	DBname string
 }
 
 func (s *DBTestSuite) SetupSuite() {
@@ -45,10 +42,10 @@ func (s *DBTestSuite) SetupSuite() {
 		return
 	}
 
-	testDBname := "test_" + config.DBname
+	s.DBname = "test_" + config.DBname + "_" + uuid.New().String()
 	// https://stackoverflow.com/questions/54048774/how-to-create-a-postgres-database-using-gorm
 	// check if db exists
-	stmt := fmt.Sprintf("SELECT * FROM pg_database WHERE datname = '%s';", testDBname)
+	stmt := fmt.Sprintf("SELECT * FROM pg_database WHERE datname = '%s';", s.DBname)
 	rs := dbObj.Db.Raw(stmt)
 	if rs.Error != nil {
 		log.Fatal("Can't check that test db exists, ", rs.Error)
@@ -58,7 +55,7 @@ func (s *DBTestSuite) SetupSuite() {
 	// if exists drop old db
 	var rec = make(map[string]interface{})
 	if rs.Find(rec); len(rec) > 0 {
-		stmt = fmt.Sprintf("DROP DATABASE \"%s\";", testDBname)
+		stmt = fmt.Sprintf("DROP DATABASE \"%s\";", s.DBname)
 		if rs = dbObj.Db.Exec(stmt); rs.Error != nil {
 			log.Fatal("Can't drop old test db, ", rs.Error)
 			return
@@ -66,7 +63,7 @@ func (s *DBTestSuite) SetupSuite() {
 
 	}
 
-	stmt = fmt.Sprintf("CREATE DATABASE \"%s\";", testDBname)
+	stmt = fmt.Sprintf("CREATE DATABASE \"%s\";", s.DBname)
 	rs = dbObj.Db.Exec(stmt)
 	if rs.Error != nil {
 		log.Fatal("Can't create test db, ", rs.Error)
@@ -81,7 +78,7 @@ func (s *DBTestSuite) SetupSuite() {
 		return
 	}
 
-	config.DBname = testDBname
+	config.DBname = s.DBname
 	dbObj, err = db.NewMafiaDB(*config)
 	if err != nil {
 		log.Fatal("Can't create db connection, ", err)
@@ -109,7 +106,6 @@ func (s *DBTestSuite) TearDownSuite() {
 		return
 	}
 
-	testDBname := "test_" + config.DBname
 	// https://stackoverflow.com/questions/54048774/how-to-create-a-postgres-database-using-gorm
 	sqlDB, err := dbObj.Db.DB()
 	if err != nil {
@@ -128,7 +124,7 @@ func (s *DBTestSuite) TearDownSuite() {
 		log.Fatal("Can't create db connection, ", err)
 		return
 	}
-	stmt := fmt.Sprintf("DROP DATABASE \"%s\";", testDBname)
+	stmt := fmt.Sprintf("DROP DATABASE \"%s\";", s.DBname)
 	rs := dbObj.Db.Exec(stmt)
 	if rs.Error != nil {
 		log.Fatal("Can't delete test db after test session, ", rs.Error)

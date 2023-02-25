@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"github.com/GeorgeS1995/mafia_bot/internal/cfg/common"
 	"os"
+	"strconv"
 )
 
 type MafiaBotPparserConfig struct {
-	CSRF         string
-	CSRFCookie   string
-	PolemicaHost string
-	Login        string
-	Password     string
+	CSRF                  string
+	CSRFCookie            string
+	PolemicaHost          string
+	Login                 string
+	Password              string
+	ParseHistoryTaskDelay int
 }
 
 func NewMafiaBotPparserConfig() (*MafiaBotPparserConfig, error) {
@@ -36,55 +38,75 @@ func NewMafiaBotPparserConfig() (*MafiaBotPparserConfig, error) {
 	if err != nil {
 		return pparserConfig, err
 	}
+	polemicaParserDelay, err := pparserConfig.GetParseHistoryTaskDelay()
+	if err != nil {
+		return pparserConfig, err
+	}
 	pparserConfig.CSRF = csfr
 	pparserConfig.CSRFCookie = csrfCookie
 	pparserConfig.PolemicaHost = polemicaHost
 	pparserConfig.Login = polemicaLogin
 	pparserConfig.Password = polemicaPassword
+	pparserConfig.ParseHistoryTaskDelay = polemicaParserDelay
 	return pparserConfig, nil
 }
 
 func (c *MafiaBotPparserConfig) GetCSRF() (csrf string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "CSRF")
-	csrf = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "CSRF")
+	csrf = os.Getenv(envName)
 	if csrf == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return csrf, err
 }
 
 func (c *MafiaBotPparserConfig) GetCSRFCookie() (csrfCookie string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "CSRF_COOKIE")
-	csrfCookie = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "CSRF_COOKIE")
+	csrfCookie = os.Getenv(envName)
 	if csrfCookie == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return csrfCookie, err
 }
 
 func (c *MafiaBotPparserConfig) GetPolemicaHost() (polemicaHost string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "POLEMICA_HOST")
-	polemicaHost = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "POLEMICA_HOST")
+	polemicaHost = os.Getenv(envName)
 	if polemicaHost == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return polemicaHost, err
 }
 
 func (c *MafiaBotPparserConfig) GetLogin() (login string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "POLEMICA_LOGIN")
-	login = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "POLEMICA_LOGIN")
+	login = os.Getenv(envName)
 	if login == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return login, err
 }
 
 func (c *MafiaBotPparserConfig) GetPassword() (password string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "POLEMICA_PASSWORD")
-	password = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "POLEMICA_PASSWORD")
+	password = os.Getenv(envName)
 	if password == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return password, err
+}
+
+func (c *MafiaBotPparserConfig) GetParseHistoryTaskDelay() (int, error) {
+	envName := fmt.Sprintf(common.ConfPrefix, "POLEMICA_PARSE_HISTORY_TASK_DELAY")
+	delay := 1000 * 60 * 60 // default one check per hour
+	delayStr := os.Getenv(envName)
+	var err error
+	if delayStr != "" {
+		delay, err = strconv.Atoi(delayStr)
+		if err != nil {
+			err = &common.MafiaBotParseTypeError{ParsedAttr: envName}
+
+		}
+	}
+	return delay, err
 }

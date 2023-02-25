@@ -13,12 +13,13 @@ import (
 type PolemicaApiClient struct {
 	Requester PolemicaRequestInterface
 	mu        sync.Mutex
-	DBhandler MafiaBotDBInterface
+	DBhandler MafiaBotServiceInterface
 }
 
-func NewPolemicaApiClient(cfg *pparser.MafiaBotPparserConfig) *PolemicaApiClient {
+func NewPolemicaApiClient(cfg *pparser.MafiaBotPparserConfig, dbHandler MafiaBotServiceInterface) *PolemicaApiClient {
 	return &PolemicaApiClient{
 		Requester: NewPolemicaRequester(cfg),
+		DBhandler: dbHandler,
 	}
 }
 
@@ -118,7 +119,7 @@ func (p *PolemicaApiClient) ParseGamesHistory(userID int, opts ...ParseGameHisto
 		{Param: "limit", Value: strconv.Itoa(options.Limit)},
 	}
 	gameHistoryPath := "cabinet/get"
-	// When totalGameToParse == totalParsedGame than all gorotine done and we can leave the func
+	// When totalGameToParse == totalParsedGame than all goroutine done and we can leave the func
 	totalGameToParse := 0
 	totalParsedGame := 0
 	pageParserCancelChan := make(chan bool)

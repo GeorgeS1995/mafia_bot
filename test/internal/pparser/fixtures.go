@@ -10,7 +10,7 @@ import (
 
 func RandomGameStatisticsResponse(gameID string) pparser.GameStatisticsResponse {
 	rand.Seed(time.Now().UnixNano())
-	players := []pparser.GameStatisticsPlayerResponse{}
+	var players []pparser.GameStatisticsPlayerResponse
 	for i := 0; i < 10; i++ {
 		players = append(players, pparser.GameStatisticsPlayerResponse{
 			Id:       strconv.Itoa(rand.Intn(100001)),

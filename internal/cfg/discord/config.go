@@ -25,17 +25,17 @@ func NewMafiaBotDiscordConfig() (*MafiaBotDiscordConfig, error) {
 }
 
 func (c *MafiaBotDiscordConfig) GetToken() (token string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "DISCORD_TOKEN")
-	token = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "DISCORD_TOKEN")
+	token = os.Getenv(envName)
 	if token == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return token, err
 }
 
 func (c *MafiaBotDiscordConfig) GetBotStatusChannels() []string {
-	env_name := fmt.Sprintf(common.ConfPrefix, "STATUS_CHANNELS")
-	channelsString := os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "STATUS_CHANNELS")
+	channelsString := os.Getenv(envName)
 	if channelsString == "" {
 		return []string{}
 	}

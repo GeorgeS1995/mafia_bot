@@ -53,28 +53,28 @@ func (c *MafiaBotDBConfig) getHost() string {
 
 // TODO get rid of copypast
 func (c *MafiaBotDBConfig) getUser() (user string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "DB_USER")
-	user = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "DB_USER")
+	user = os.Getenv(envName)
 	if user == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return user, err
 }
 
 func (c *MafiaBotDBConfig) getPassword() (password string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "DB_PASSWORD")
-	password = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "DB_PASSWORD")
+	password = os.Getenv(envName)
 	if password == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return password, err
 }
 
 func (c *MafiaBotDBConfig) getDBName() (dbName string, err error) {
-	env_name := fmt.Sprintf(common.ConfPrefix, "DB_NAME")
-	dbName = os.Getenv(env_name)
+	envName := fmt.Sprintf(common.ConfPrefix, "DB_NAME")
+	dbName = os.Getenv(envName)
 	if dbName == "" {
-		err = &common.MafiaBotParseError{ParsedAttr: env_name}
+		err = &common.MafiaBotParseMissingRequiredParamError{ParsedAttr: envName}
 	}
 	return dbName, err
 }

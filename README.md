@@ -35,3 +35,7 @@
 - MAFIA_BOT_POLEMICA_HOST - хост polemica
 - MAFIA_BOT_POLEMICA_LOGIN - логин на polemica
 - MAFIA_BOT_POLEMICA_PASSWORD - пароль на polemica
+
+#### Параметры для переодически задач
+
+- MAFIA_BOT_POLEMICA_PARSE_HISTORY_TASK_DELAY - интервал получения новых игр, по умолчанию раз в час

@@ -2,18 +2,16 @@ package test_pparser
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GeorgeS1995/mafia_bot/internal/db"
+	cfg "github.com/GeorgeS1995/mafia_bot/internal/cfg/pparser"
 	"github.com/GeorgeS1995/mafia_bot/internal/pparser"
 	"github.com/GeorgeS1995/mafia_bot/test"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"io"
-	"log"
 	"math/rand"
 	"net/http"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -129,286 +127,66 @@ func TestPolemicaParserServerResponseError(t *testing.T) {
 	}
 }
 
-// Test p.ParseGame method
-func TestPolemicaParserParseGameOK(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
-	gameId := strconv.Itoa(rand.Intn(100001))
-	gameStatisticResponse := RandomGameStatisticsResponse(gameId)
-	b, _ := json.Marshal(gameStatisticResponse)
+func TestPolemicaParserSetUserIDError(t *testing.T) {
+	pParser := pparser.NewPolemicaRequester(&cfg.MafiaBotPparserConfig{})
+	method := "GET"
+	url := ""
 	ctrl := gomock.NewController(t)
-	m := NewMockPolemicaRequestInterface(ctrl)
-	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&pparser.PolemicaResponse{Body: b, StatusCode: 200}, nil)
-	pParser := pparser.PolemicaApiClient{
-		Requester: m,
+	m := NewMockHttpClientInterface(ctrl)
+	m.EXPECT().Do(gomock.Any()).Return(
+		&http.Response{
+			Body:       io.NopCloser(bytes.NewReader([]byte{255})),
+			StatusCode: 200,
+			Header:     http.Header{"Set-Cookie": []string{"%u0"}}}, nil)
+
+	_, err := pParser.PolemicaRequest(method, url, nil, m, nil)
+
+	if _, ok := err.(*pparser.MafiaBotPolemicaParserSetUserIDError); !ok {
+		t.Fatalf("Wrong error type: %s", err)
+	}
+}
+
+func TestSetUserIDFromCookieOK(t *testing.T) {
+	pParser := pparser.NewPolemicaRequester(&cfg.MafiaBotPparserConfig{})
+	rand.Seed(time.Now().UnixNano())
+	userId := rand.Intn(99999-10000) + 10000
+	headers := http.Header{
+		"Set-Cookie": []string{
+			fmt.Sprintf("_id-maf11front=2bf4533645a4b8e8333d962ef510fa1ca620039590fff1bebdf9d438acdd3c30a:2:{i:0;s:14:\"_id-maf11front\";i:1;s:48:\"[%d,\"wqHCFqlkZzAEziaDtdENn9JH7oxR7a02\",86400]\";}; expires=Fri, 17-Feb-2023 18:47:23 GMT; Max-Age=86400; path=/; HttpOnly", userId),
+			"region=694203d7630f1597b0bf7afa9f132a14091b12570991e5d855f05814064be272a:2:{i:0;s:6:\"region\";i:1;s:2:\"KZ\";}; path=/; HttpOnly",
+		},
 	}
 
-	resp, err := pParser.ParseGame(gameId)
+	err := pParser.SetUserIDFromCookie(headers)
 
 	if err != nil {
-		t.Fatalf("ParseGame unexpected error: %s", err.Error())
+		t.Fatalf("Unexpected error: %s", err.Error())
 	}
-	expectedGameResult, err := db.ToGameResult(gameStatisticResponse.WinnerCode)
-	if err != nil {
-		t.Fatalf("Error while convert winner code to enum: %s", err.Error())
-	}
-	if resp.GameResult != expectedGameResult {
-		t.Fatalf("ParseGame winner codes aren't equal. \nExpected: %s\nAsserted %s", expectedGameResult, resp.GameResult)
-	}
-	for idx, p := range gameStatisticResponse.Players {
-		if p.Id != resp.Players[idx].ID {
-			t.Fatalf("ParseGame player with index %d incorrect unmarshalled. \nExpected: %+v\nAsserted %+v", idx, p, resp.Players[idx])
-		}
-	}
+	assert.Equal(t, pParser.UserID, userId)
 }
 
-func TestPolemicaParserParseGameResponseError(t *testing.T) {
-	requestError := errors.New("")
-	rand.Seed(time.Now().UnixNano())
-	gameId := strconv.Itoa(rand.Intn(100001))
-	ctrl := gomock.NewController(t)
-	m := NewMockPolemicaRequestInterface(ctrl)
-	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&pparser.PolemicaResponse{}, requestError)
-	pParser := pparser.PolemicaApiClient{
-		Requester: m,
+func TestSetUserIDFromCookieDecodeError(t *testing.T) {
+	pParser := pparser.NewPolemicaRequester(&cfg.MafiaBotPparserConfig{})
+	headers := http.Header{
+		"Set-Cookie": []string{"%u0"},
 	}
 
-	_, err := pParser.ParseGame(gameId)
+	err := pParser.SetUserIDFromCookie(headers)
 
-	if _, ok := err.(*pparser.MafiaBotPolemicaParserParseGameResponseError); !ok {
+	if _, ok := err.(*pparser.MafiaBotPolemicaParserSetUserIDFromCookieDecodeError); !ok {
 		t.Fatalf("Wrong error type: %s", err)
 	}
 }
 
-func TestPolemicaParserParseGameUnmarshalError(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
-	gameId := strconv.Itoa(rand.Intn(100001))
-	ctrl := gomock.NewController(t)
-	m := NewMockPolemicaRequestInterface(ctrl)
-	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&pparser.PolemicaResponse{Body: nil, StatusCode: 200}, nil)
-	pParser := pparser.PolemicaApiClient{
-		Requester: m,
+func TestSetUserIDFromCookieRegexError(t *testing.T) {
+	pParser := pparser.NewPolemicaRequester(&cfg.MafiaBotPparserConfig{})
+	headers := http.Header{
+		"Set-Cookie": []string{"_id-maf11front=2bf4"},
 	}
 
-	_, err := pParser.ParseGame(gameId)
+	err := pParser.SetUserIDFromCookie(headers)
 
-	if _, ok := err.(*pparser.MafiaBotPolemicaParserParseGameUnmarshalError); !ok {
+	if _, ok := err.(*pparser.MafiaBotPolemicaParserSetUserIDFromCookieRegexError); !ok {
 		t.Fatalf("Wrong error type: %s", err)
-	}
-}
-
-func TestPolemicaParserParseGameEnumConvertationError(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
-	gameId := strconv.Itoa(rand.Intn(100001))
-	gameStatisticResponse := RandomGameStatisticsResponse(gameId)
-	gameStatisticResponse.WinnerCode = 3
-	b, _ := json.Marshal(gameStatisticResponse)
-	ctrl := gomock.NewController(t)
-	m := NewMockPolemicaRequestInterface(ctrl)
-	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&pparser.PolemicaResponse{Body: b, StatusCode: 200}, nil)
-	pParser := pparser.PolemicaApiClient{
-		Requester: m,
-	}
-
-	_, err := pParser.ParseGame(gameId)
-
-	if _, ok := err.(*pparser.MafiaBotPolemicaParserParseGameEnumConvertationError); !ok {
-		t.Fatalf("Wrong error type: %s", err)
-	}
-}
-
-// Test p.ParseGamesHistory method
-func TestPolemicaParserParseGamesHistoryOK(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
-	polemicaUserId := rand.Intn(100001)
-	ctrl := gomock.NewController(t)
-	requestMock := NewMockPolemicaRequestInterface(ctrl)
-	// api response mock
-	isSecondPage := false
-	requestMock.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(method, url string, body io.Reader, queryParams []*pparser.QueryParams) (*pparser.PolemicaResponse, error) {
-			response := &pparser.PolemicaResponse{StatusCode: 200}
-			marshaled := []byte{}
-			if method == "GET" {
-				rows := []pparser.PolemicaGameHistoryResponseRow{
-					{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat},
-				}
-				if !isSecondPage {
-					rows = append(rows, pparser.PolemicaGameHistoryResponseRow{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat})
-					isSecondPage = true
-				}
-				to_marshal := &pparser.PolemicaGameHistoryResponse{
-					Rows: rows,
-				}
-				marshaled, _ = json.Marshal(to_marshal)
-
-			} else if method == "POST" {
-				to_marshal := RandomGameStatisticsResponse(strconv.Itoa(rand.Intn(100001)))
-				marshaled, _ = json.Marshal(to_marshal)
-
-			}
-			response.Body = marshaled
-			return response, nil
-		}).Times(5)
-	// Saver mock
-	dbMock := NewMockMafiaBotDBInterface(ctrl)
-	dbMock.EXPECT().SaveMinimalGameStatistic(gomock.Any()).Times(3)
-	// Create test PolemicaApiClient
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-		DBhandler: dbMock,
-	}
-
-	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
-
-	if err != nil {
-		log.Fatalf("Unexpected error: %s", err.Error())
-	}
-}
-
-func TestPolemicaParserParseGamesHistoryOKStopByGameId(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
-	polemicaUserId := rand.Intn(100001)
-	ctrl := gomock.NewController(t)
-	requestMock := NewMockPolemicaRequestInterface(ctrl)
-	// api response mock
-	stopGameID := strconv.Itoa(rand.Intn(100001))
-	isSecondPage := false
-	requestMock.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(method, url string, body io.Reader, queryParams []*pparser.QueryParams) (*pparser.PolemicaResponse, error) {
-			response := &pparser.PolemicaResponse{StatusCode: 200}
-			marshaled := []byte{}
-			if method == "GET" {
-				gameId := strconv.Itoa(rand.Intn(100001))
-				if isSecondPage {
-					gameId = stopGameID
-				}
-				to_marshal := &pparser.PolemicaGameHistoryResponse{
-					Rows: []pparser.PolemicaGameHistoryResponseRow{
-						{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat},
-						{Id: gameId, DateStart: pparser.PolemicaTimeFormat},
-					},
-				}
-				marshaled, _ = json.Marshal(to_marshal)
-				isSecondPage = true
-			} else if method == "POST" {
-				to_marshal := RandomGameStatisticsResponse(strconv.Itoa(rand.Intn(100001)))
-				marshaled, _ = json.Marshal(to_marshal)
-			}
-			response.Body = marshaled
-			return response, nil
-		}).Times(5)
-	// Saver mock
-	dbMock := NewMockMafiaBotDBInterface(ctrl)
-	dbMock.EXPECT().SaveMinimalGameStatistic(gomock.Any()).Times(3)
-	// Create test PolemicaApiClient
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-		DBhandler: dbMock,
-	}
-
-	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2), pparser.SetToGameID(stopGameID))
-
-	if err != nil {
-		log.Fatalf("Unexpected error: %s", err.Error())
-	}
-}
-
-func TestPolemicaParserParseGamesHistoryResponseError(t *testing.T) {
-	polemicaUserId := rand.Intn(100001)
-	ctrl := gomock.NewController(t)
-	requestMock := NewMockPolemicaRequestInterface(ctrl)
-	requestMock.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&pparser.PolemicaResponse{}, errors.New(""))
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-	}
-
-	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
-
-	if _, ok := err.(*pparser.MafiaBotPolemicaParserParseGamesHistoryResponseError); !ok {
-		t.Fatalf("Wrong error type: %s", err)
-	}
-}
-
-func TestPolemicaParserParseGamesHistoryUnmarshalError(t *testing.T) {
-	polemicaUserId := rand.Intn(100001)
-	ctrl := gomock.NewController(t)
-	requestMock := NewMockPolemicaRequestInterface(ctrl)
-	requestMock.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&pparser.PolemicaResponse{Body: nil, StatusCode: 200}, nil)
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-	}
-
-	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
-
-	if _, ok := err.(*pparser.MafiaBotPolemicaParserParseGamesHistoryUnmarshalError); !ok {
-		t.Fatalf("Wrong error type: %s", err)
-	}
-}
-
-func TestPolemicaParserParseGamesHistoryGoroutineError(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
-	polemicaUserId := rand.Intn(100001)
-	ctrl := gomock.NewController(t)
-	requestMock := NewMockPolemicaRequestInterface(ctrl)
-	// api response mock
-	isFirstGame := false
-	gameId := strconv.Itoa(rand.Intn(100001))
-	requestMock.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(method, url string, body io.Reader, queryParams []*pparser.QueryParams) (*pparser.PolemicaResponse, error) {
-			response := &pparser.PolemicaResponse{}
-			var mockError error
-			if method == "GET" {
-				to_marshal := &pparser.PolemicaGameHistoryResponse{
-					Rows: []pparser.PolemicaGameHistoryResponseRow{
-						{Id: gameId},
-						{Id: strconv.Itoa(rand.Intn(100001))},
-					},
-				}
-				marshaled, _ := json.Marshal(to_marshal)
-				response.StatusCode = 200
-				response.Body = marshaled
-			} else if method == "POST" {
-				pasedGameId := strconv.Itoa(rand.Intn(100001))
-				if isFirstGame {
-					pasedGameId = gameId
-					isFirstGame = false
-				}
-				_ = RandomGameStatisticsResponse(pasedGameId)
-				response.StatusCode = 400
-				mockError = &pparser.MafiaBotPolemicaParserNewRequestError{}
-			}
-			return response, mockError
-		}).AnyTimes()
-
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-	}
-	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
-
-	if typedError, ok := err.(*pparser.MafiaBotPolemicaParserParseGameResponseError); !ok {
-		t.Fatalf("Wrong error type: %s", err)
-	} else if typedError.GameID != gameId {
-		t.Fatalf("Error from wrong gogoutine")
-	}
-}
-
-// goroutineGameParseErrorArray tests
-func TestGetFirstError(t *testing.T) {
-	errorList := pparser.GoroutineGameParseErrorArray{
-		{3, errors.New("")},
-		{1, errors.New("")},
-		{2, errors.New("")},
-	}
-
-	firstIdxError := errorList.GetFirstError()
-
-	if firstIdxError.PageIdx != 1 {
-		t.Fatalf("Wrong error idx: %d", firstIdxError.PageIdx)
 	}
 }
