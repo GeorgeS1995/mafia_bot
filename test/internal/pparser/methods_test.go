@@ -241,6 +241,8 @@ func TestPolemicaParserParseGamesHistoryGoroutineError(t *testing.T) {
 	polemicaUserId := rand.Intn(100001)
 	ctrl := gomock.NewController(t)
 	requestMock := NewMockPolemicaRequestInterface(ctrl)
+	dbMock := NewMockMafiaBotServiceInterface(ctrl)
+	dbMock.EXPECT().SaveMinimalGameStatistic(gomock.Any()).Return(nil).AnyTimes()
 	// api response mock
 	isFirstGame := false
 	gameId := strconv.Itoa(rand.Intn(100001))
@@ -273,6 +275,7 @@ func TestPolemicaParserParseGamesHistoryGoroutineError(t *testing.T) {
 
 	pParser := pparser.PolemicaApiClient{
 		Requester: requestMock,
+		DBhandler: dbMock,
 	}
 	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
 
