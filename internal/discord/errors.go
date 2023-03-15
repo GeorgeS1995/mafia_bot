@@ -32,3 +32,16 @@ type MafiaBotChannelMSGSendError struct {
 func (e *MafiaBotChannelMSGSendError) Error() string {
 	return fmt.Sprintf("%v: Can't send msg to the channel id: %s, original error: %s", e.GetISOFormat(), e.ChannelId, e.Err.Error())
 }
+
+type MafiaBotSendStatisticsError struct {
+	internal.MafiaBotError
+	SentErrorsList []dailyStatisticErrorData
+}
+
+func (e *MafiaBotSendStatisticsError) Error() string {
+	formatedStatisticErrors := ""
+	for _, err := range e.SentErrorsList {
+		formatedStatisticErrors += fmt.Sprintf("Date: %s, From: %s, Description: %s\n", err.Day, err.From, err.Detail)
+	}
+	return fmt.Sprintf("%v: This games was not send to discord: \n", e.GetISOFormat())
+}

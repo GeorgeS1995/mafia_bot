@@ -3,6 +3,7 @@ package test_pparser
 import (
 	"encoding/json"
 	"errors"
+	"github.com/GeorgeS1995/mafia_bot/internal"
 	"github.com/GeorgeS1995/mafia_bot/internal/db"
 	"github.com/GeorgeS1995/mafia_bot/internal/pparser"
 	"github.com/golang/mock/gomock"
@@ -119,10 +120,10 @@ func TestPolemicaParserParseGamesHistoryOK(t *testing.T) {
 			var marshaled []byte
 			if method == "GET" {
 				rows := []pparser.PolemicaGameHistoryResponseRow{
-					{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat},
+					{Id: strconv.Itoa(rand.Intn(100001)), DateStart: internal.PolemicaTimeFormat},
 				}
 				if !isSecondPage {
-					rows = append(rows, pparser.PolemicaGameHistoryResponseRow{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat})
+					rows = append(rows, pparser.PolemicaGameHistoryResponseRow{Id: strconv.Itoa(rand.Intn(100001)), DateStart: internal.PolemicaTimeFormat})
 					isSecondPage = true
 				}
 				toMarshal := &pparser.PolemicaGameHistoryResponse{
@@ -173,8 +174,8 @@ func TestPolemicaParserParseGamesHistoryOKStopByGameId(t *testing.T) {
 				}
 				toMarshal := &pparser.PolemicaGameHistoryResponse{
 					Rows: []pparser.PolemicaGameHistoryResponseRow{
-						{Id: strconv.Itoa(rand.Intn(100001)), DateStart: pparser.PolemicaTimeFormat},
-						{Id: gameId, DateStart: pparser.PolemicaTimeFormat},
+						{Id: strconv.Itoa(rand.Intn(100001)), DateStart: internal.PolemicaTimeFormat},
+						{Id: gameId, DateStart: internal.PolemicaTimeFormat},
 					},
 				}
 				marshaled, _ = json.Marshal(toMarshal)

@@ -45,11 +45,14 @@ func main() {
 	}
 	parseGameHistoryQuite := make(chan bool)
 	pparser.ParseGameHistoryTask(db, pc, pc.Requester.GetCurrentUserID(), config.Pparser.ParseHistoryTaskDelay, parseGameHistoryQuite)
+	SendGamestatisticQuite := make(chan bool)
+	discord.SendGameStatisticTask(db, dg.Bot, *config.Discord, SendGamestatisticQuite)
 	log.Println("Bot is now running.  Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 	parseGameHistoryQuite <- true
+	SendGamestatisticQuite <- true
 	// Cleanly close down the Discord session.
 	dg.Bot.Close()
 }

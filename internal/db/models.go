@@ -21,8 +21,8 @@ type Game struct {
 }
 
 type PlayerGame struct {
-	UserID uuid.UUID `gorm:"index:user_game_id,unique"`
-	GameID uuid.UUID `gorm:"index:user_game_id,unique"`
+	UserID uuid.UUID `gorm:"index:user_game_id,unique;type:uuid;"`
+	GameID uuid.UUID `gorm:"index:user_game_id,unique;type:uuid;"`
 	Points float32
 }
 
@@ -31,4 +31,17 @@ type User struct {
 	MafiaBaseModel
 	PolemicaNickName string
 	PolemicaId       string
+}
+
+type MVP struct {
+	NickName string
+	Score    float32
+}
+type DailyStatistic struct {
+	Date          time.Time
+	GameCount     int
+	MafiaWins     int
+	CityWins      int
+	MVP           MVP
+	PlayedGamesID []uuid.UUID
 }
