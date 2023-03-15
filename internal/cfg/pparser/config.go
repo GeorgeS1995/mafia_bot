@@ -105,7 +105,6 @@ func (c *MafiaBotPparserConfig) GetParseHistoryTaskDelay() (int, error) {
 		delay, err = strconv.Atoi(delayStr)
 		if err != nil {
 			err = &common.MafiaBotParseTypeError{ParsedAttr: envName}
-
 		}
 	}
 	return delay, err

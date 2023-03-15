@@ -3,6 +3,7 @@ package pparser
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/GeorgeS1995/mafia_bot/internal"
 	"github.com/GeorgeS1995/mafia_bot/internal/cfg/pparser"
 	"github.com/GeorgeS1995/mafia_bot/internal/db"
 	"strconv"
@@ -168,7 +169,7 @@ func (p *PolemicaApiClient) ParseGamesHistory(userID int, opts ...ParseGameHisto
 					return
 				}
 				// Add game started date
-				date, goroutineErr := time.Parse(PolemicaTimeFormat, goroutineRow.DateStart)
+				date, goroutineErr := time.Parse(internal.PolemicaTimeFormat, goroutineRow.DateStart)
 				if goroutineErr != nil {
 					errorsList = append(errorsList, GoroutineGameParseError{goroutineIdx, goroutineErr})
 					return
