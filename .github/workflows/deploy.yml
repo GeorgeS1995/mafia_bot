@@ -1,0 +1,36 @@
+name: Prod deploy
+run-name: Deploy to the prod host
+on:
+  release:
+    types: [ published ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate envs
+        shell: bash
+        env:
+          MAFIA_BOT_DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          MAFIA_BOT_STATUS_CHANNELS: ${{ secrets.STATUS_CHANNELS }}
+          MAFIA_BOT_STATISTIC_CHANNEL: ${{ secrets.STATISTIC_CHANNEL }}
+          MAFIA_BOT_CSRF: ${{ secrets.CSRF }}
+          MAFIA_BOT_CSRF_COOKIE: ${{ secrets.CSRF_COOKIE }}
+          MAFIA_BOT_POLEMICA_HOST: ${{ secrets.POLEMICA_HOST }}
+          MAFIA_BOT_POLEMICA_LOGIN: ${{ secrets.POLEMICA_LOGIN }}
+          MAFIA_BOT_POLEMICA_PASSWORD: ${{ secrets.POLEMICA_PASSWORD }}
+          DB_PASSWORD: ${{ secrets.DbPass }}
+          DB_USER: ${{ secrets.DbUser }}
+          DB_NAME: ${{ secrets.DbName }}
+        run: ./scripts/generate_envs.sh
+      - name: Run playbook
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          playbook: deploy.yml
+          directory: build/ci
+          key: ${{secrets.SSH_PRIVATE_KEY}}
+          options: |
+            --inventory ${{secrets.DeployHosts}}
+            -u ${{secrets.DeployUser}}
+            --extra-vars code_src_path=${{github.workspace}}
+            --verbose
