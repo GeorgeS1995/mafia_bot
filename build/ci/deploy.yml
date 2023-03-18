@@ -9,5 +9,5 @@
           - "--exclude=.git"
     - name: Run docker compose
       shell:
-        cmd: "docker compose -f ./docker/docker-compose.yml up -d --build"
+        cmd: "docker compose -f ./deployments/docker-compose.yml up -d --build"
         chdir: ./code/
