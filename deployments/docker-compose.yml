@@ -4,6 +4,8 @@ services:
     build:
       context: ..
       dockerfile: ./deployments/Dockerfile
+      target: building
+    command: ./mafia_bot
     restart: always
     env_file:
       - ../mafia-bot.env

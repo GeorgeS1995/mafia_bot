@@ -1,6 +1,8 @@
 version: "3.9"
 services:
   mafia-bot:
+    build:
+      target: base
     command: go run cmd/mafia_bot/mafia_bot.go
   mafia-db:
     ports:
