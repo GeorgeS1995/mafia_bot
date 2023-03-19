@@ -6,21 +6,27 @@ import (
 	"github.com/GeorgeS1995/mafia_bot/internal"
 	"github.com/GeorgeS1995/mafia_bot/internal/cfg/pparser"
 	"github.com/GeorgeS1995/mafia_bot/internal/db"
+	"regexp"
 	"strconv"
 	"sync"
 	"time"
 )
 
 type PolemicaApiClient struct {
-	Requester PolemicaRequestInterface
-	mu        sync.Mutex
-	DBhandler MafiaBotServiceInterface
+	Requester           PolemicaRequestInterface
+	mu                  sync.Mutex
+	DBhandler           MafiaBotServiceInterface
+	GameStatisticsRegex *regexp.Regexp
 }
 
+var GameStaticsRegex = ":game-data='(.+)'"
+
 func NewPolemicaApiClient(cfg *pparser.MafiaBotPparserConfig, dbHandler MafiaBotServiceInterface) *PolemicaApiClient {
+	match, _ := regexp.Compile(GameStaticsRegex)
 	return &PolemicaApiClient{
-		Requester: NewPolemicaRequester(cfg),
-		DBhandler: dbHandler,
+		Requester:           NewPolemicaRequester(cfg),
+		DBhandler:           dbHandler,
+		GameStatisticsRegex: match,
 	}
 }
 
@@ -204,7 +210,13 @@ func (p *PolemicaApiClient) ParseGame(gameID string) (MinimalGameStatistic, erro
 		return MinimalGameStatistic{}, &MafiaBotPolemicaParserParseGameResponseError{Detail: err.Error(), GameID: gameID}
 	}
 	gameStatisticsResponse := &GameStatisticsResponse{}
-	err = json.Unmarshal(resp.Body, gameStatisticsResponse)
+	stringBody := string(resp.Body)
+	match := p.GameStatisticsRegex.FindStringSubmatch(stringBody)
+	validatedBody := resp.Body
+	if match != nil {
+		validatedBody = []byte(match[1])
+	}
+	err = json.Unmarshal(validatedBody, gameStatisticsResponse)
 	if err != nil {
 		return MinimalGameStatistic{}, &MafiaBotPolemicaParserParseGameUnmarshalError{Detail: err.Error(), GameID: gameID}
 	}

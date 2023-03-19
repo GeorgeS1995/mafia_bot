@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -25,9 +26,7 @@ func TestPolemicaParserParseGameOK(t *testing.T) {
 	m := NewMockPolemicaRequestInterface(ctrl)
 	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&pparser.PolemicaResponse{Body: b, StatusCode: 200}, nil)
-	pParser := pparser.PolemicaApiClient{
-		Requester: m,
-	}
+	pParser := GetTestPolemicaApiClient(m, nil)
 
 	resp, err := pParser.ParseGame(gameId)
 
@@ -48,6 +47,35 @@ func TestPolemicaParserParseGameOK(t *testing.T) {
 	}
 }
 
+func TestPolemicaParserParseGameHTMLResponseOK(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	gameId := strconv.Itoa(rand.Intn(100001))
+	expectedGameResult := db.CityWin
+	b, _ := os.ReadFile("data/TestPolemicaParserParseGameHTMLResponseOK/response.html")
+	ctrl := gomock.NewController(t)
+	m := NewMockPolemicaRequestInterface(ctrl)
+	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&pparser.PolemicaResponse{Body: b, StatusCode: 200}, nil)
+	pParser := GetTestPolemicaApiClient(m, nil)
+
+	resp, err := pParser.ParseGame(gameId)
+
+	if err != nil {
+		t.Fatalf("ParseGame unexpected error: %s", err.Error())
+	}
+	if err != nil {
+		t.Fatalf("Error while convert winner code to enum: %s", err.Error())
+	}
+	if resp.GameResult != expectedGameResult {
+		t.Fatalf("ParseGame winner codes aren't equal. \nExpected: %s\nAsserted %s", expectedGameResult, resp.GameResult)
+	}
+	for idx, p := range [10]string{"51537", "49292", "8866", "54479", "47751", "49268", "54877", "21073", "7277", "11781"} {
+		if p != resp.Players[idx].ID {
+			t.Fatalf("ParseGame player with index %d incorrect unmarshalled. \nExpected: %+v\nAsserted %+v", idx, p, resp.Players[idx])
+		}
+	}
+}
+
 func TestPolemicaParserParseGameResponseError(t *testing.T) {
 	requestError := errors.New("")
 	rand.Seed(time.Now().UnixNano())
@@ -56,9 +84,7 @@ func TestPolemicaParserParseGameResponseError(t *testing.T) {
 	m := NewMockPolemicaRequestInterface(ctrl)
 	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&pparser.PolemicaResponse{}, requestError)
-	pParser := pparser.PolemicaApiClient{
-		Requester: m,
-	}
+	pParser := GetTestPolemicaApiClient(m, nil)
 
 	_, err := pParser.ParseGame(gameId)
 
@@ -74,9 +100,7 @@ func TestPolemicaParserParseGameUnmarshalError(t *testing.T) {
 	m := NewMockPolemicaRequestInterface(ctrl)
 	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&pparser.PolemicaResponse{Body: nil, StatusCode: 200}, nil)
-	pParser := pparser.PolemicaApiClient{
-		Requester: m,
-	}
+	pParser := GetTestPolemicaApiClient(m, nil)
 
 	_, err := pParser.ParseGame(gameId)
 
@@ -95,9 +119,7 @@ func TestPolemicaParserParseGameEnumConvertationError(t *testing.T) {
 	m := NewMockPolemicaRequestInterface(ctrl)
 	m.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&pparser.PolemicaResponse{Body: b, StatusCode: 200}, nil)
-	pParser := pparser.PolemicaApiClient{
-		Requester: m,
-	}
+	pParser := GetTestPolemicaApiClient(m, nil)
 
 	_, err := pParser.ParseGame(gameId)
 
@@ -143,10 +165,7 @@ func TestPolemicaParserParseGamesHistoryOK(t *testing.T) {
 	dbMock := NewMockMafiaBotServiceInterface(ctrl)
 	dbMock.EXPECT().SaveMinimalGameStatistic(gomock.Any()).Times(3)
 	// Create test PolemicaApiClient
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-		DBhandler: dbMock,
-	}
+	pParser := GetTestPolemicaApiClient(requestMock, dbMock)
 
 	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
 
@@ -191,10 +210,7 @@ func TestPolemicaParserParseGamesHistoryOKStopByGameId(t *testing.T) {
 	dbMock := NewMockMafiaBotServiceInterface(ctrl)
 	dbMock.EXPECT().SaveMinimalGameStatistic(gomock.Any()).Times(3)
 	// Create test PolemicaApiClient
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-		DBhandler: dbMock,
-	}
+	pParser := GetTestPolemicaApiClient(requestMock, dbMock)
 
 	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2), pparser.SetToGameID(stopGameID))
 
@@ -209,9 +225,7 @@ func TestPolemicaParserParseGamesHistoryResponseError(t *testing.T) {
 	requestMock := NewMockPolemicaRequestInterface(ctrl)
 	requestMock.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&pparser.PolemicaResponse{}, errors.New(""))
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-	}
+	pParser := GetTestPolemicaApiClient(requestMock, nil)
 
 	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
 
@@ -226,9 +240,7 @@ func TestPolemicaParserParseGamesHistoryUnmarshalError(t *testing.T) {
 	requestMock := NewMockPolemicaRequestInterface(ctrl)
 	requestMock.EXPECT().Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&pparser.PolemicaResponse{Body: nil, StatusCode: 200}, nil)
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-	}
+	pParser := GetTestPolemicaApiClient(requestMock, nil)
 
 	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
 
@@ -273,11 +285,8 @@ func TestPolemicaParserParseGamesHistoryGoroutineError(t *testing.T) {
 			}
 			return response, mockError
 		}).AnyTimes()
+	pParser := GetTestPolemicaApiClient(requestMock, dbMock)
 
-	pParser := pparser.PolemicaApiClient{
-		Requester: requestMock,
-		DBhandler: dbMock,
-	}
 	err := pParser.ParseGamesHistory(polemicaUserId, pparser.SetLimit(2))
 
 	if typedError, ok := err.(*pparser.MafiaBotPolemicaParserParseGameResponseError); !ok {
